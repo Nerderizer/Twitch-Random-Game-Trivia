@@ -87,23 +87,27 @@ public bool Execute()
 
 
 
-    private void OnTimedEvent(object sender, ElapsedEventArgs e)
+private void OnTimedEvent(object sender, ElapsedEventArgs e)
+{
+    // End the game if the timer runs out
+    timerCount++;
+    if (timerCount == 1)
     {
-        // End the game if the timer runs out
-        timerCount++;
-        if (timerCount == 1)
-        {
-            CPH.SendMessage("Reminder: You have 30 seconds left to answer the trivia question!", true);
-            CPH.SendYouTubeMessage("Reminder: You have 30 seconds left to answer the trivia question!");
-            return;
-        }
-        else
-        {
-            CPH.SendMessage("Time's up! The correct answer was: " + correctAnswer, true);
-            CPH.SendYouTubeMessage("Time's up! The correct answer was: " + correctAnswer);
-            timer.Enabled = false;
-        }
+        double triviaTimer = CPH.GetGlobalVar<double>("triviaTimer");
+        int triviaTimerSeconds = (int)(triviaTimer / 1000);
+        int remainingSeconds = triviaTimerSeconds / 2;
+
+        CPH.SendMessage($"Reminder: You have {remainingSeconds} seconds left to answer the trivia question!", true);
+        CPH.SendYouTubeMessage($"Reminder: You have {remainingSeconds} seconds left to answer the trivia question!");
+        return;
     }
+    else
+    {
+        CPH.SendMessage("Time's up! The correct answer was: " + correctAnswer, true);
+        CPH.SendYouTubeMessage("Time's up! The correct answer was: " + correctAnswer);
+        timer.Enabled = false;
+    }
+}
 
     public bool TriviaAnswerHandler()
     {
