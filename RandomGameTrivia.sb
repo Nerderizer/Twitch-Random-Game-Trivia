@@ -15,69 +15,77 @@ public class CPHInline
     private int timerCount = 0;
     private HashSet<string> guessedUsers;
 
-    public bool Execute()
+public bool Execute()
+{
+    try
     {
-        try
+        // Initialize the guessed users HashSet
+        guessedUsers = new HashSet<string>();
+
+        // Get the user who redeemed the Channel Point Redemption
+        redeemer = args["user"].ToString();
+        string url = CPH.GetGlobalVar<string>("openTriviaUrl");
+
+        // Fetch a random trivia question from the Open Trivia Database
+        HttpResponseMessage response = client.GetAsync(url).GetAwaiter().GetResult();
+        if (response.IsSuccessStatusCode)
         {
-            // Initialize the guessed users HashSet
-            guessedUsers = new HashSet<string>();
+            string triviaData = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            JObject triviaJson = JObject.Parse(triviaData);
 
-            // Get the user who redeemed the Channel Point Redemption
-            redeemer = args["user"].ToString();
-            string url = CPH.GetGlobalVar<string>("openTriviaUrl");
+            // Extract the question, correct answer, and incorrect answers
+            string question = HttpUtility.HtmlDecode(triviaJson["results"][0]["question"].ToString());
+            correctAnswer = HttpUtility.HtmlDecode(triviaJson["results"][0]["correct_answer"].ToString());
+            JArray incorrectAnswers = (JArray)triviaJson["results"][0]["incorrect_answers"];
+            List<string> allAnswers = incorrectAnswers.ToObject<List<string>>();
+            allAnswers.Add(correctAnswer);
 
-            // Fetch a random trivia question from the Open Trivia Database
-            HttpResponseMessage response = client.GetAsync(url).GetAwaiter().GetResult();
-            if (response.IsSuccessStatusCode)
+            // Randomize the order of the answers
+            Random rng = new Random();
+            int n = allAnswers.Count;
+            while (n > 1)
             {
-                string triviaData = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                JObject triviaJson = JObject.Parse(triviaData);
-
-                // Extract the question, correct answer, and incorrect answers
-                string question = HttpUtility.HtmlDecode(triviaJson["results"][0]["question"].ToString());
-                correctAnswer = HttpUtility.HtmlDecode(triviaJson["results"][0]["correct_answer"].ToString());
-                JArray incorrectAnswers = (JArray)triviaJson["results"][0]["incorrect_answers"];
-                List<string> allAnswers = incorrectAnswers.ToObject<List<string>>();
-                allAnswers.Add(correctAnswer);
-
-                // Randomize the order of the answers
-                Random rng = new Random();
-                int n = allAnswers.Count;
-                while (n > 1)
-                {
-                    n--;
-                    int k = rng.Next(n + 1);
-                    string value = allAnswers[k];
-                    allAnswers[k] = allAnswers[n];
-                    allAnswers[n] = value;
-                }
-
-                // Send the question and answers to the chat, informing users they only get one guess
-                CPH.SendMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have one minute and one guess to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}", true);
-                CPH.SendYouTubeMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have one minute and one guess to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}");
-
-                // Start the timer for 5 minutes
-                timer = new Timer(.5 * 60 * 1000);
-                timer.Elapsed += OnTimedEvent;
-                timer.AutoReset = true;
-                timer.Enabled = true;
+                n--;
+                int k = rng.Next(n + 1);
+                string value = allAnswers[k];
+                allAnswers[k] = allAnswers[n];
+                allAnswers[n] = value;
             }
-            else
-            {
-                // Output a message to the chat if there was an error retrieving the trivia data
-                CPH.SendMessage("Failed to retrieve trivia data.", true);
-                CPH.SendYouTubeMessage("Failed to retrieve trivia data.");
-            }
+
+            // Get the trivia timer duration and convert it to minutes and seconds
+            double triviaTimer = CPH.GetGlobalVar<double>("triviaTimer");
+            int triviaTimerSeconds = (int)(triviaTimer / 1000);
+            int minutes = triviaTimerSeconds / 60;
+            int seconds = triviaTimerSeconds % 60;
+
+            // Send the question and answers to the chat, informing users they only get one guess
+            CPH.SendMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}", true);
+            CPH.SendYouTubeMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}");
+
+            // Start the timer for the duration specified in the triviaTimer global variable
+            timer = new Timer(triviaTimer);
+            timer.Elapsed += OnTimedEvent;
+            timer.AutoReset = true;
+            timer.Enabled = true;
         }
-        catch (Exception ex)
+        else
         {
-            // Output the exception to the chat
-            CPH.SendMessage($"An error occurred: {ex.Message}", true);
-            CPH.SendYouTubeMessage($"An error occurred: {ex.Message}");
+            // Output a message to the chat if there was an error retrieving the trivia data
+            CPH.SendMessage("Failed to retrieve trivia data.", true);
+            CPH.SendYouTubeMessage("Failed to retrieve trivia data.");
         }
-
-        return true;
     }
+    catch (Exception ex)
+    {
+        // Output the exception to the chat
+        CPH.SendMessage($"An error occurred: {ex.Message}", true);
+        CPH.SendYouTubeMessage($"An error occurred: {ex.Message}");
+    }
+
+    return true;
+}
+
+
 
     private void OnTimedEvent(object sender, ElapsedEventArgs e)
     {
