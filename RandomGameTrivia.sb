@@ -109,10 +109,20 @@ private void OnTimedEvent(object sender, ElapsedEventArgs e)
     }
 }
 
-    public bool TriviaAnswerHandler()
+public bool TriviaAnswerHandler()
+{
+    string user = args["user"].ToString();
+    string rawInput = args["rawInput"].ToString();
+
+    // Check if the message starts with !guess
+    if (!rawInput.StartsWith("!guess"))
     {
-        string user = args["user"].ToString();
-        string guess = args["rawInput"].ToString();
+        // If not, it's not a trivia guess, so we can ignore it
+        return true;
+    }
+
+    // Extract the guess from the message
+    string guess = rawInput.Substring("!guess".Length).Trim();
 
         // Check if the user already guessed
         if (guessedUsers.Contains(user))
