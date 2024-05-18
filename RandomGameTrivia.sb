@@ -59,8 +59,8 @@ public bool Execute()
             int seconds = triviaTimerSeconds % 60;
 
             // Send the question and answers to the chat, informing users they only get one guess
-            CPH.SendMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}", true);
-            CPH.SendYouTubeMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question.: {question}. Choices: {string.Join(", ", allAnswers)}");
+            CPH.SendMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question: {question} | Choices: {string.Join(", ", allAnswers)}", true);
+            CPH.SendYouTubeMessage($"It's time to T-t-t-t-t-trivia! Click my name, click WHISPER to send your guess to me! You have {minutes} minute(s) and {seconds} second(s) to answer the following question: {question} | Choices: {string.Join(", ", allAnswers)}");
 
             // Start the timer for the duration specified in the triviaTimer global variable
             timer = new Timer(triviaTimer);
